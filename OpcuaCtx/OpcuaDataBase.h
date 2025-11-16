@@ -5,6 +5,10 @@
 class OpcuaDataBase
 {
 public:
+	static const int VAR_READ = 1;
+	static const int VAR_WRITE = 2;
+	static const int VAR_READWRITE = VAR_READ | VAR_WRITE;
+public:
 	OpcuaDataBase(UA_Server* server);
 	~OpcuaDataBase();
 
@@ -15,12 +19,12 @@ protected:
 	virtual void AddCVariable() {};
 	UA_Server* m_server;
 
-	
+	UA_NodeId m_nodeId;
 };
 class OpcuaDataBaseInt32 : public OpcuaDataBase
 {	
 public:
-	OpcuaDataBaseInt32(UA_Server* server, char* nodeName);
+	OpcuaDataBaseInt32(UA_Server* server, int rwflag, char* nodeName);
 	~OpcuaDataBaseInt32() {}	
 	void UpdateInt32();
 	void SetValue(int value) { m_data = value; }
@@ -49,17 +53,18 @@ public:
 		ctx->m_data = *(UA_Int32*)data->value.data;
 	}
 private:
-	void AddVariableInt32();
+	void AddVariableInt32(int rwflag);
 	
 
 	UA_Int32 m_data;
 	char* m_nodeName;
+	
 };
 
 class  OpcuaDataBaseString : public OpcuaDataBase
 {
 public:
-	OpcuaDataBaseString(UA_Server* server, char* nodeName);
+	OpcuaDataBaseString(UA_Server* server, int rwflag, char* nodeName);
 	~OpcuaDataBaseString() {}
 	void UpdateString();
 	void SetValue(const char* value) {
@@ -89,11 +94,12 @@ public:
 			UA_LOG_WARNING(UA_Log_Stdout, UA_LOGCATEGORY_USERLAND, "Client attempted to write a non-String value. Type: %s", data->value.type->typeName);
 			return;
 		}
+		UA_String_clear(&ctx->m_data);
 		UA_String_copy((UA_String*)data->value.data, &ctx->m_data);
 		//ctx->m_data = *(UA_String*)data->value.data;
 	}
 private:
-	void AddVariableString();
+	void AddVariableString(int rwflag);
 	UA_String m_data;
 	char* m_nodeName;
 };

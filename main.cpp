@@ -25,8 +25,10 @@ static volatile BOOL gMonitorRunning = TRUE;
 
 
 OpcuaDataBaseString* nodeVarProductName;
-OpcuaDataBaseString* nodeVarProductState;
+OpcuaDataBaseString* nodeVarRunningStatus;
 OpcuaDataBaseInt32* nodeVarCmd;
+OpcuaDataBaseString* nodeVar_C_RequestProductChange;
+OpcuaDataBaseString* nodeVar_S_ResponseProductChange;
 
 // ===================================== http ====================================
 // 
@@ -166,9 +168,9 @@ int main(void) {
 
     DcInit(gOpcuaServer);
 
-	nodeVarProductName = new OpcuaDataBaseString(gOpcuaServer, (char*)"ProductName");
-	nodeVarProductState = new OpcuaDataBaseString(gOpcuaServer, (char*)"ProductState");
-	nodeVarCmd = new OpcuaDataBaseInt32(gOpcuaServer, (char*)"Cmd");
+	nodeVarProductName = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READ,(char*)"S-ProductName");
+	nodeVarRunningStatus = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READWRITE,(char*)"S-RunningStatus");
+	nodeVarCmd = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READWRITE,(char*)"Cmd");
 
     start_http_server();
 
