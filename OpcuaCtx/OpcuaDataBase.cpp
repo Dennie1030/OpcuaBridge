@@ -1,4 +1,10 @@
 #include "OpcuaDataBase.h"
+#include <string>
+#include <vector>
+#include <mutex>
+#include <algorithm>
+#include <cctype>
+#include <sstream>
 
 OpcuaDataBase::OpcuaDataBase(UA_Server* server)
 {
@@ -195,6 +201,47 @@ void OpcuaDataBaseDateTime::AddVariableDateTime(int rwflag)
 
 
 // =============================================================== OpcuaDataBaseString =======================================================================
+// 静态成员定义
+
+
+void OpcuaDataBaseString::ClearFilter() {
+	std::lock_guard<std::mutex> lk(s_filterMutex);
+	s_filterWords.clear();
+}
+
+bool OpcuaDataBaseString::IsWordAllowed(const std::string& word) {
+	std::lock_guard<std::mutex> lk(s_filterMutex);
+	if (s_filterWords.empty()) {
+		// 若过滤表为空，默认拒绝（可按需改为允许所有）
+		return true;
+	}
+	for (const auto& w : s_filterWords) {
+		if (w == word) return true;
+	}
+	return false;
+}
+static inline std::string trim_copy(const std::string& s) {
+	size_t b = 0;
+	size_t e = s.size();
+	while (b < e && std::isspace((unsigned char)s[b])) ++b;
+	while (e > b && std::isspace((unsigned char)s[e - 1])) --e;
+	return s.substr(b, e - b);
+}
+
+void OpcuaDataBaseString::SetFilterFromCsv(const char* csv) {
+	std::vector<std::string> tmp;
+	if (csv) {
+		std::string s(csv);
+		std::istringstream ss(s);
+		std::string item;
+		while (std::getline(ss, item, ',')) {
+			std::string t = trim_copy(item);
+			if (!t.empty()) tmp.push_back(t);
+		}
+	}
+	std::lock_guard<std::mutex> lk(s_filterMutex);
+	s_filterWords.swap(tmp);
+}
 
 OpcuaDataBaseString::OpcuaDataBaseString(UA_Server* server, int rwflag, char* nodeName)
 	:OpcuaDataBase(server)

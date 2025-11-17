@@ -1,6 +1,9 @@
 #ifndef OPCUDATABASE_H
 #define OPCUDATABASE_H
 #include "../open62541.h"
+#include <string>
+#include <vector>
+#include <mutex>
 
 class OpcuaDataBase
 {
@@ -167,12 +170,18 @@ private:
 	char* m_nodeName;
 };
 
-
 class  OpcuaDataBaseString : public OpcuaDataBase
 {
 public:
 	OpcuaDataBaseString(UA_Server* server, int rwflag, char* nodeName);
 	~OpcuaDataBaseString() {}
+
+
+	void ClearFilter();
+	void SetFilterFromCsv(const char* csv);
+	bool IsWordAllowed(const std::string& word);
+
+
 	void UpdateString();
 	void SetValue(const char* value) {
 		if (m_data.data != 0 && m_data.length > 0)UA_String_clear(&m_data);
@@ -213,21 +222,30 @@ public:
 			if (stringdata->data != ctx->m_data.data) {
 				UA_LOG_WARNING(UA_Log_Stdout, UA_LOGCATEGORY_USERLAND, "Client attempted to write a String value. len=%d,adr1=%d,adr2=%d", stringdata->length, stringdata->data, ctx->m_data.data);
 
+				// 将 UA_String 内容转换为 std::string（注意不是以 NUL 结尾）
+				std::string incoming((const char*)stringdata->data, stringdata->length);
+
+				// 检查是否允许
+				if (!ctx->IsWordAllowed(incoming)) {
+					UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_USERLAND, "Write rejected by filter: '%.*s'", (int)stringdata->length, (const char*)stringdata->data);
+					return;
+				}
+				// 允许写入，先清理旧数据，再复制新数据
 				UA_String_clear(&ctx->m_data);
 				UA_String_copy(stringdata, &ctx->m_data);
 			}
-			//UA_String_clear(&ctx->m_data);
-			//UA_String_copy(stringdata, &ctx->m_data);
+
 		}
-		
-		//ctx->m_data = *(UA_String*)data->value.data;
-		//UA_String_copy((UA_String*)data->value.data, &ctx->m_data);
-		//ctx->m_data = *(UA_String*)data->value.data;
+
 	}
 private:
 	void AddVariableString(int rwflag);
 	UA_String m_data;
 	char* m_nodeName;
+
+	std::vector<std::string> s_filterWords;
+	std::mutex s_filterMutex;
+
 };
 
 #endif

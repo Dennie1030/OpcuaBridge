@@ -32,7 +32,7 @@ OpcuaDataBaseString* nodeVar_C_RequestProductChange;
 OpcuaDataBaseString* nodeVar_S_ResponseProductChange;
 OpcuaDataBaseDateTime* nodeVar_S_ProductionStartTime;
 OpcuaDataBaseFloat* nodeVar_S_ProductionProgress;
-OpcuaDataBaseInt32* nodeVar_C_RequestProductionCommand;
+OpcuaDataBaseString* nodeVar_C_RequestProductionCommand;
 
 
 
@@ -193,7 +193,7 @@ int main(void) {
 	nodeVar_S_ResponseProductChange = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ResponseProductChange");
 	nodeVar_S_ProductionStartTime = new OpcuaDataBaseDateTime(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ProductionStartTime");
 	nodeVar_S_ProductionProgress = new OpcuaDataBaseFloat(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ProductionProgress");
-	nodeVar_C_RequestProductionCommand = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READWRITE, (char*)"C-RequestProductionCommand");
+	nodeVar_C_RequestProductionCommand = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READWRITE, (char*)"C-RequestProductionCommand");
 
 
 	nodeVarCmd = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READWRITE,(char*)"Cmd");
@@ -201,11 +201,12 @@ int main(void) {
 
     nodeVarProductName->SetValue("group2");
 	nodeVarRunningStatus->SetStatus("idle");
-	nodeVar_C_RequestProductChange->SetValue("none");
+	nodeVar_C_RequestProductChange->SetValue("none");	
 	nodeVar_S_ResponseProductChange->SetValue("none");
 	nodeVar_S_ProductionStartTime->SetValue(UA_DateTime_now());
 	nodeVar_S_ProductionProgress->SetValue(0.07f);
-	nodeVar_C_RequestProductionCommand->SetValue(0);
+	nodeVar_C_RequestProductionCommand->SetValue("none");
+	nodeVar_C_RequestProductionCommand->SetFilterFromCsv("none,start,stop,pause,resume");
 
     start_http_server();
 
