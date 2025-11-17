@@ -136,6 +136,7 @@
     <ClInclude Include="civetweb.h" />
     <ClInclude Include="opcCommon.h" />
     <ClInclude Include="OpcuaCtx\OpcuaDataBase.h" />
+    <ClInclude Include="OpcuaCtx\OpcuaDataDeviceStatus.h" />
     <ClInclude Include="open62541.h" />
   </ItemGroup>
   <ItemGroup>

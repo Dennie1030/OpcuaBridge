@@ -15,12 +15,6 @@ void DcInit(UA_Server* server) {
         UA_QUALIFIEDNAME(1, "mynamespace"),              // 名称
         UA_NODEID_NUMERIC(0, UA_NS0ID_BASEOBJECTTYPE),   // 类型
         oAttr, NULL, NULL);
-
-	// 其他初始化操作
-    // 更改server的名称
-    UA_ServerConfig* config = UA_Server_getConfig(server);
-    config->applicationDescription.applicationName = UA_LOCALIZEDTEXT_ALLOC("en-US", "Forcon OPC UA Server");
-    UA_ServerConfig_setMinimal(config, 5650, NULL);
 }
 
 void DcUpdateCurrentStateInt32(UA_Server* server, MyNodeInt32Context* ctx) {

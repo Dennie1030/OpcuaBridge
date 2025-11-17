@@ -48,6 +48,9 @@
     <ClInclude Include="OpcuaCtx\OpcuaDataBase.h">
       <Filter>OpcuaCtx</Filter>
     </ClInclude>
+    <ClInclude Include="OpcuaCtx\OpcuaDataDeviceStatus.h">
+      <Filter>OpcuaCtx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="handle_form.inl">
