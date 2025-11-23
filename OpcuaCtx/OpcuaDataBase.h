@@ -189,6 +189,13 @@ public:
 		UA_String_copy(&tmp, &m_data);
 	}
 
+	void GetValue(UA_String* dest) {
+		//这里需要加锁，防止读写冲突
+		std::lock_guard<std::mutex> lk(s_filterMutex);
+		UA_String_copy(&m_data, dest);
+	
+	}
+
 	static void beforeReadCallback(UA_Server* server,
 		const UA_NodeId* sessionId, void* sessionContext,
 		const UA_NodeId* nodeid, void* nodeContext,
@@ -230,6 +237,8 @@ public:
 					UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_USERLAND, "Write rejected by filter: '%.*s'", (int)stringdata->length, (const char*)stringdata->data);
 					return;
 				}
+				// 这里需要枷锁，防止读写冲突
+				std::lock_guard<std::mutex> lk(ctx->s_filterMutex);
 				// 允许写入，先清理旧数据，再复制新数据
 				UA_String_clear(&ctx->m_data);
 				UA_String_copy(stringdata, &ctx->m_data);

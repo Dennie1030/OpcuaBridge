@@ -33,7 +33,7 @@ OpcuaDataBaseString* nodeVar_S_ResponseProductChange;
 OpcuaDataBaseDateTime* nodeVar_S_ProductionStartTime;
 OpcuaDataBaseFloat* nodeVar_S_ProductionProgress;
 OpcuaDataBaseString* nodeVar_C_RequestProductionCommand;
-
+OpcuaDataBaseString* nodeVar_S_ResponseProductionCommand;
 
 
 // 监控线程：检查 handle_ask 最后访问时间，若超过 15 秒则置 gDeviceIsOnline = false
@@ -110,6 +110,44 @@ static int handle_ask(struct mg_connection* conn, void* cbdata) {
         return 405;
     }
 }
+
+// CivetWeb HTTP 请求处理（仅支持 GET，返回所有数据状态，以json格式返回）
+static int handle_read(struct mg_connection* conn, void* cbdata) {
+    const struct mg_request_info* req_info = mg_get_request_info(conn);
+    if (strcmp(req_info->request_method, "GET") == 0) {
+        mg_printf(conn,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
+
+		UA_String requestProduct;
+        nodeVar_C_RequestProductChange->GetValue(&requestProduct);
+		char* requestProductStr = (char*)malloc(requestProduct.length + 1);
+		memcpy(requestProductStr, requestProduct.data, requestProduct.length);
+        requestProductStr[requestProduct.length] = '\0';
+		UA_String_clear(&requestProduct);
+
+		UA_String requestProductionCmd;
+		nodeVar_C_RequestProductionCommand->GetValue(&requestProductionCmd);
+		char* requestProductionCmdStr = (char*)malloc(requestProductionCmd.length + 1);
+		memcpy(requestProductionCmdStr, requestProductionCmd.data, requestProductionCmd.length);
+		requestProductionCmdStr[requestProductionCmd.length] = '\0';
+		UA_String_clear(&requestProductionCmd);
+
+        // 构造 JSON 响应
+        mg_printf(conn,
+            "{ \"req_product\": \"%s\", \"req_production_cmd\": \"%s\"}",
+            requestProductStr,
+            requestProductionCmdStr
+        );
+		free(requestProductStr);
+		free(requestProductionCmdStr);
+        return 200;
+    }
+    else {
+        mg_printf(conn, "HTTP/1.1 405 Method Not Allowed\r\n\r\n");
+        return 405;
+    }
+}
+
 // CivetWeb HTTP 请求处理（GET 返回状态，POST 设置状态）
 static int handle_write(struct mg_connection* conn, void* cbdata) {
     const struct mg_request_info* req_info = mg_get_request_info(conn);
@@ -135,6 +173,32 @@ static int handle_write(struct mg_connection* conn, void* cbdata) {
                 int new_value = atoi(value_buf);
                 nodeVarCmd->SetValue(new_value);
             }
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "productName", value_buf, sizeof(value_buf)) > 0) {
+                nodeVarProductName->SetValue(value_buf);
+			}
+
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "requestProduct", value_buf, sizeof(value_buf)) > 0) {
+                nodeVar_C_RequestProductChange->SetValue(value_buf);
+            }
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "responseProduct", value_buf, sizeof(value_buf)) > 0) {
+                nodeVar_S_ResponseProductChange->SetValue(value_buf);
+			}
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "productionProgress", value_buf, sizeof(value_buf)) > 0) {
+                float progress = static_cast<float>(atof(value_buf));
+                nodeVar_S_ProductionProgress->SetValue(progress);
+			}
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "productionStartTime", value_buf, sizeof(value_buf)) > 0) {
+                // 假设传入的是时间戳字符串
+                UA_DateTime startTime = static_cast<UA_DateTime>(atoll(value_buf));
+                nodeVar_S_ProductionStartTime->SetValue(startTime);
+			}
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "requestProductionCmd", value_buf, sizeof(value_buf)) > 0) {
+                nodeVar_C_RequestProductionCommand->SetValue(value_buf);
+			}
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "responseProductionCmd", value_buf, sizeof(value_buf)) > 0) {
+                nodeVar_S_ResponseProductionCommand->SetValue(value_buf);
+            }
+
             // 返回响应...
         }
         /*
@@ -176,6 +240,7 @@ void start_http_server() {
     // 注册 REST 路径
     mg_set_request_handler(ctx, "/write", handle_write, 0);
     mg_set_request_handler(ctx, "/ask", handle_ask, 0);
+	mg_set_request_handler(ctx, "/read", handle_read, 0);
 
     printf("HTTP server running on http://127.0.0.1:8080/state\n");
     // 不要退出，需要保持 ctx 存在
@@ -194,12 +259,13 @@ int main(void) {
 	nodeVar_S_ProductionStartTime = new OpcuaDataBaseDateTime(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ProductionStartTime");
 	nodeVar_S_ProductionProgress = new OpcuaDataBaseFloat(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ProductionProgress");
 	nodeVar_C_RequestProductionCommand = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READWRITE, (char*)"C-RequestProductionCommand");
+	nodeVar_S_ResponseProductionCommand = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ResponseProductionCommand");
 
 
 	nodeVarCmd = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READWRITE,(char*)"Cmd");
 
 
-    nodeVarProductName->SetValue("group2");
+    nodeVarProductName->SetValue("unknow");
 	nodeVarRunningStatus->SetStatus("idle");
 	nodeVar_C_RequestProductChange->SetValue("none");	
 	nodeVar_S_ResponseProductChange->SetValue("none");
@@ -207,6 +273,7 @@ int main(void) {
 	nodeVar_S_ProductionProgress->SetValue(0.07f);
 	nodeVar_C_RequestProductionCommand->SetValue("none");
 	nodeVar_C_RequestProductionCommand->SetFilterFromCsv("none,start,stop,pause,resume");
+	nodeVar_S_ResponseProductionCommand->SetValue("none");
 
     start_http_server();
 

@@ -1,5 +1,5 @@
 
-## OPC UA 服务端说明(v0.0.2)
+## OPC UA 服务端说明(v0.0.3)
 
 ### 一、连接
 * 格式: opc.tcp://ip:5650
@@ -21,6 +21,7 @@
         * running 运行中
         * idle 空闲
         * stoped 停止
+        * manual 手动模式，不接受任何命令
         * fault 错误
 3. **C-RequestProductChange**
     * 类型：String
@@ -52,4 +53,10 @@
         * start: 加工
         * stop: 停止
     * 注意：请不要持续写入，一次性写入即可
-8. 。。待续
+8. **S-ResponseProductionCommand**
+    * 类型: String
+    * 访问：读
+    * 说明：对C-RequestProductionCommand命令的回应
+        * accepted 已接受，请求有效
+        * rejected 已拒绝：请求不被允许，将不被执行
+        * none 无回应，此状态才接受客户端的加工请求
