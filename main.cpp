@@ -35,6 +35,8 @@ OpcuaDataBaseFloat* nodeVar_S_ProductionProgress;
 OpcuaDataBaseString* nodeVar_C_RequestProductionCommand;
 OpcuaDataBaseString* nodeVar_S_ResponseProductionCommand;
 
+OpcuaDataBaseInt32* nodeVar_S_TrayForPicking;
+OpcuaDataBaseInt32* nodeVar_S_TrayForPlacing;
 
 // 监控线程：检查 handle_ask 最后访问时间，若超过 15 秒则置 gDeviceIsOnline = false
 static DWORD WINAPI MonitorAskThread(LPVOID lpParam) {
@@ -198,6 +200,14 @@ static int handle_write(struct mg_connection* conn, void* cbdata) {
             if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "responseProductionCmd", value_buf, sizeof(value_buf)) > 0) {
                 nodeVar_S_ResponseProductionCommand->SetValue(value_buf);
             }
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "trayForPicking", value_buf, sizeof(value_buf)) > 0) {
+                int trayPicking = atoi(value_buf);
+                nodeVar_S_TrayForPicking->SetValue(trayPicking);
+			}
+            if (mg_get_var(req_info->query_string, strlen(req_info->query_string), "trayForPlacing", value_buf, sizeof(value_buf)) > 0) {
+                int trayPlacing = atoi(value_buf);
+                nodeVar_S_TrayForPlacing->SetValue(trayPlacing);
+            }
 
             // 返回响应...
         }
@@ -260,7 +270,8 @@ int main(void) {
 	nodeVar_S_ProductionProgress = new OpcuaDataBaseFloat(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ProductionProgress");
 	nodeVar_C_RequestProductionCommand = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READWRITE, (char*)"C-RequestProductionCommand");
 	nodeVar_S_ResponseProductionCommand = new OpcuaDataBaseString(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-ResponseProductionCommand");
-
+	nodeVar_S_TrayForPicking = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-TrayForPicking");
+	nodeVar_S_TrayForPlacing = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READ, (char*)"S-TrayForPlacing");
 
 	nodeVarCmd = new OpcuaDataBaseInt32(gOpcuaServer, OpcuaDataBase::VAR_READWRITE,(char*)"Cmd");
 
@@ -274,6 +285,8 @@ int main(void) {
 	nodeVar_C_RequestProductionCommand->SetValue("none");
 	nodeVar_C_RequestProductionCommand->SetFilterFromCsv("none,start,stop,pause,resume");
 	nodeVar_S_ResponseProductionCommand->SetValue("none");
+	nodeVar_S_TrayForPicking->SetValue(0);
+	nodeVar_S_TrayForPlacing->SetValue(0);
 
     start_http_server();
 
