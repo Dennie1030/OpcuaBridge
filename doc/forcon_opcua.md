@@ -1,5 +1,5 @@
 
-## OPC UA 服务端说明(v0.0.3)
+## OPC UA 服务端说明(v0.0.4)
 
 ### 一、连接
 * 格式: opc.tcp://ip:5650
@@ -60,3 +60,20 @@
         * accepted 已接受，请求有效
         * rejected 已拒绝：请求不被允许，将不被执行
         * none 无回应，此状态才接受客户端的加工请求
+9. **S-TrayForPicking**
+    * 类型：Int32
+    * 访问：读
+    * 说明：可取件的位置信息
+        * bit 0: 位置编号1的信息，true代表可以取件，false代表不可取件
+        * bit 1: 位置编号2的信息，true代表可以取件，false代表不可取件
+        * bit 2: 位置编号3的信息，true代表可以取件，false代表不可取件
+        * bit 3: 位置编号4的信息，true代表可以取件，false代表不可取件
+  
+10. **S-TrayForPlacing**
+    * 类型：Int32
+    * 访问：读
+    * 说明：可放件的位置信息
+        * bit 0: 位置编号1的信息，true代表可以放件，false代表不可放件
+        * bit 1: 位置编号2的信息，true代表可以放件，false代表不可放件
+        * bit 2: 位置编号3的信息，true代表可以放件，false代表不可放件
+        * bit 3: 位置编号4的信息，true代表可以放件，false代表不可放件
